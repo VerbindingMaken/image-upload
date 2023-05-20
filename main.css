@@ -1,0 +1,19 @@
+.image-upload__container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-upload__input {
+    display: none;
+}
+
+.image-upload__drop-zone {
+    width: 400px;
+    height: 220px;
+    margin-top: 100px;
+    padding: 10px 20px;
+    background-color: aliceblue;
+    border: 1px dotted lightblue;
+    border-radius: 10px;
+}
