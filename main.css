@@ -1,7 +1,12 @@
+* {
+    box-sizing: border-box;
+}
+
 .image-upload__container {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 100px;
 }
 
 .image-upload__input {
@@ -11,9 +16,34 @@
 .image-upload__drop-zone {
     width: 400px;
     height: 220px;
-    margin-top: 100px;
     padding: 10px 20px;
     background-color: aliceblue;
     border: 1px dotted lightblue;
     border-radius: 10px;
+}
+
+.image-edit__container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 100px;
+}
+
+.image-edit__edit-frame {
+    display: flex;
+    justify-content: space-between;
+    width: 600px;
+    height: 340px;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: beige;
+}
+
+.image-edit__image-frame {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    width: 300px;
+    background-color: lightgray;
 }
