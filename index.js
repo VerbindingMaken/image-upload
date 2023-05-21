@@ -23,23 +23,24 @@ function onFileSelected(event) {
 function displayImage(imageFile) {
     const image = new Image();
     const imagePath = URL.createObjectURL(imageFile);
-
+    image.src = imagePath;
 
     image.addEventListener('load', function () {
-        const imageHeight = image.naturalHeight;
-        const imageWidth = image.naturalWidth;
-        console.log(image, 'Height: ', imageHeight, 'Widht: ', imageWidth)
+        const originalHeight = image.naturalHeight;
+        const originalWidth = image.naturalWidth;
+        console.log(image, 'Height: ', originalHeight, 'Width: ', originalWidth)
 
-    })
+        const imageCanvas = document.querySelector('.image-edit__image-canvas');
+        const canvasContext = imageCanvas.getContext('2d');
+
+        imageCanvas.width = originalWidth;
+        imageCanvas.height = originalHeight;
+
+        imageCanvas.style.maxWidth = '300px';
+        imageCanvas.style.maxHeight = '300px';
+
+        canvasContext.drawImage(image, 0, 0, originalWidth, originalHeight);
 
 
-    image.src = imagePath;
-    image.style.maxWidth = '300px';
-    image.style.maxHeight = '300px';
-
-    while (imageFrame.lastElementChild) {
-        imageFrame.removeChild(imageFrame.lastElementChild)
-    }
-
-    imageFrame.appendChild(image);
+    });
 }
