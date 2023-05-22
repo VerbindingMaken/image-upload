@@ -48,6 +48,25 @@
     background-color: lightgray;
 }
 
+.image-edit-canvas-frame {
+    position: relative;
+}
+
+.image-edit__selection-box {
+    position: absolute;
+    display: none;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100px;
+    border: 4px dashed black;
+}
+
+.image-edit__selection-box:hover {
+    border-color: red;
+    cursor: grab;
+}
+
 .image-edit__action-menu {
     margin-left: 20px;
 }

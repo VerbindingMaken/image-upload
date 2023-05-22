@@ -5,15 +5,18 @@ const uploadButton = document.querySelector(".image-upload__upload-button");
 const downloadButton = document.querySelector('.image-edit__download-button');
 const cropButton = document.querySelector('.image-edit__crop-button');
 const resetButton = document.querySelector('.image-edit__reset-button')
-const imageFrame = document.querySelector('.image-edit__image-frame');
+const canvasFrame = document.querySelector('.image-edit-canvas-frame');
+const selectionBox = document.querySelector('.image-edit__selection-box');
 
 fileInput.addEventListener('change', onFileSelected);
 uploadButton.addEventListener('click', selectImageForUpload);
 downloadButton.addEventListener('click', downloadImage);
 cropButton.addEventListener('click', cropImage);
 resetButton.addEventListener('click', resetImage);
+selectionBox.addEventListener('mousedown', clickSelectionBox)
+selectionBox.addEventListener('dragstart', () => false);
 
-const canvas = document.querySelector('.image-edit__image-canvas');
+const canvas = document.querySelector('.image-edit__canvas');
 const canvasContext = canvas.getContext("2d");
 
 // Image and image information
@@ -25,12 +28,12 @@ const originalImage = {
     element: new Image()
 }
 
-const resize = {
-    x: 0,
-    y: 0,
-    newWidth: originalImage.width,
-    newHeight: originalImage.height
-}
+// const resize = {
+//     x: 0,
+//     y: 0,
+//     newWidth: originalImage.width,
+//     newHeight: originalImage.height
+// }
 
 let imageLoaded = false;
 
@@ -67,6 +70,7 @@ function displayImage(imageFile) {
 
         canvasContext.drawImage(originalImage.element, 0, 0, originalImage.width, originalImage.height);
 
+        selectionBox.style.display = "block";
         imageLoaded = true;
     });
 
@@ -108,4 +112,33 @@ function cropImage() {
 
 function resetImage() {
     resizeImage(0, 0, originalImage.width, originalImage.height);
+}
+
+function clickSelectionBox(clickEvent) {
+
+    console.log('mouseclick')
+
+    const pointerX = clickEvent.offsetX;
+    const pointerY = clickEvent.offsetY;
+
+    function moveSelectionBox(moveEvent) {
+
+        const rectangle = canvasFrame.getBoundingClientRect();
+        const left = (moveEvent.clientX - pointerX) - rectangle.left;
+        const top = (moveEvent.clientY - pointerY) - rectangle.top;
+
+        selectionBox.style.left = `${left}px`;
+        selectionBox.style.top = `${top}px`;
+    }
+
+    console.log('add event listener for move')
+
+    selectionBox.addEventListener('mousemove', moveSelectionBox);
+    selectionBox.addEventListener('mouseup', () => {
+        console.log('remove')
+        selectionBox.removeEventListener('mousemove', moveSelectionBox);
+        selectionBox.removeEventListener('mouseup');
+    })
+
+
 }
