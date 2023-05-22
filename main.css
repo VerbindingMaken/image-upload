@@ -47,3 +47,7 @@
     width: 300px;
     background-color: lightgray;
 }
+
+.image-edit__action-menu {
+    margin-left: 20px;
+}
