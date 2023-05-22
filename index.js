@@ -28,12 +28,12 @@ const originalImage = {
     element: new Image()
 }
 
-// const resize = {
-//     x: 0,
-//     y: 0,
-//     newWidth: originalImage.width,
-//     newHeight: originalImage.height
-// }
+let selectionBoxDimensions = {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0
+}
 
 let imageLoaded = false;
 
@@ -124,21 +124,36 @@ function clickSelectionBox(clickEvent) {
     function moveSelectionBox(moveEvent) {
 
         const rectangle = canvasFrame.getBoundingClientRect();
-        const left = (moveEvent.clientX - pointerX) - rectangle.left;
-        const top = (moveEvent.clientY - pointerY) - rectangle.top;
+        const left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
+        const top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
 
         selectionBox.style.left = `${left}px`;
         selectionBox.style.top = `${top}px`;
+
+        const scale = originalImage.width / canvas.offsetWidth;
+
+        selectionBoxDimensions = {
+            x: left * scale,
+            y: top * scale,
+            width: (moveEvent.target.clientWidth + 2 * moveEvent.target.clientLeft) * scale,
+            height: (moveEvent.target.clientHeight + 2 * moveEvent.target.clientTop) * scale
+        }
+
+        console.log("Box: ", selectionBoxDimensions);
     }
 
-    console.log('add event listener for move')
+    function stopSelection() {
+        resizeImage(
+            selectionBoxDimensions.x,
+            selectionBoxDimensions.y,
+            selectionBoxDimensions.width,
+            selectionBoxDimensions.height
+        )
+        selectionBox.removeEventListener('mousemove', moveSelectionBox);
+        selectionBox.removeEventListener('mouseup', stopSelection);
+    }
+
 
     selectionBox.addEventListener('mousemove', moveSelectionBox);
-    selectionBox.addEventListener('mouseup', () => {
-        console.log('remove')
-        selectionBox.removeEventListener('mousemove', moveSelectionBox);
-        selectionBox.removeEventListener('mouseup');
-    })
-
-
+    selectionBox.addEventListener('mouseup', stopSelection);
 }
