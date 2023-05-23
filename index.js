@@ -112,8 +112,11 @@ function handleFileDrop(event) {
 
         const data = event.dataTransfer;
         const file = data.files[0];
+        const type = file.type;
 
-        displayImage(file);
+        if (type === "image/jpeg" || type === "image/png") {
+            displayImage(file);
+        }
     }
 }
 
