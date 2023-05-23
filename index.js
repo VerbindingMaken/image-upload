@@ -204,6 +204,9 @@ function clickResizeHandleSelectionBox(clickEvent) {
 
     function resizeSelectionBox(resizeEvent) {
 
+        resizeEvent.stopPropagation();
+        resizeEvent.preventDefault();
+
         const newWidth = Math.floor(rectangle.width + resizeEvent.clientX - pointerX);
         const newHeight = Math.floor(rectangle.height + resizeEvent.clientY - pointerY);
 
