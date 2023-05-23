@@ -13,13 +13,24 @@
     display: none;
 }
 
-.image-upload__drop-zone {
+.image-upload__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
     width: 400px;
     height: 220px;
     padding: 10px 20px;
     background-color: aliceblue;
     border: 1px dotted lightblue;
     border-radius: 10px;
+}
+
+.image-upload__drag-over-dropzone {
+    border: 2px dotted dodgerblue;
+    background-color: lightblue;
+    cursor: copy;
 }
 
 .image-edit__container {

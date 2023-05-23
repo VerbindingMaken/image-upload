@@ -1,31 +1,50 @@
 
-// Elements
+// Input for:           upload image file
 const fileInput = document.querySelector(".image-upload__input")
-const uploadButton = document.querySelector(".image-upload__upload-button");
-const downloadButton = document.querySelector('.image-edit__download-button');
-const cropButton = document.querySelector('.image-edit__crop-button');
-const resetButton = document.querySelector('.image-edit__reset-button')
+const uploadButton = document.querySelector(".image-upload__dropzone-button");
+const dropZone = document.querySelector('.image-upload__dropzone');
+
+// Event listeners for:  upload image file
+fileInput.addEventListener('change', handleFileInput);
+uploadButton.addEventListener('click', selectImageForUpload);
+
+
+window.addEventListener('dragenter', handleFileDrag, false);
+window.addEventListener("dragover", handleFileDrag);
+window.addEventListener("drop", handleFileDrop);
+
+dropZone.ondragleave = () => removeDragStyling();
+
+// Elements for             canvas and selection
 const canvasFrame = document.querySelector('.image-edit-canvas-frame');
 const selectionBox = document.querySelector('.image-edit__selection-box');
 const resizeHandleSelectionBox = document.querySelector('.image-edit__resize-handle-selection-box');
 
-// Event listeners on elements
-fileInput.addEventListener('change', onFileSelected);
-uploadButton.addEventListener('click', selectImageForUpload);
-downloadButton.addEventListener('click', downloadImage);
-cropButton.addEventListener('click', cropImage);
-resetButton.addEventListener('click', resetImage);
-selectionBox.addEventListener('mousedown', clickSelectionBox);
-// Prevent browser default dragstart event
+// Event listeners for      canvas and selection
 selectionBox.addEventListener('dragstart', () => false);
+selectionBox.addEventListener('mousedown', clickSelectionBox);
 resizeHandleSelectionBox.addEventListener('mousedown', clickResizeHandleSelectionBox);
 resizeHandleSelectionBox.addEventListener('dragstart', () => false);
+
+// Buttons for:             edit and save actions
+const downloadButton = document.querySelector('.image-edit__download-button');
+const cropButton = document.querySelector('.image-edit__crop-button');
+const resetButton = document.querySelector('.image-edit__reset-button');
+
+// Event listeners for:     edit and save actions
+cropButton.addEventListener('click', cropImage);
+resetButton.addEventListener('click', resetImage);
+downloadButton.addEventListener('click', downloadImage);
+
 
 // Image canvas
 const canvas = document.querySelector('.image-edit__canvas');
 const canvasContext = canvas.getContext("2d");
 
-// Image and image information, set after image is selected; 
+// State
+let isImageLoaded = false;
+let isSelectionResizing = false
+
 const originalImage = {
     name: "",
     size: 0,
@@ -42,23 +61,75 @@ let selectionBoxDimensions = {
     height: 0
 }
 
-let isImageLoaded = false;
-let isSelectionResizing = false
-
+// File input
 function selectImageForUpload() {
+
     fileInput.click();
 }
 
-function onFileSelected(event) {
+function handleFileInput(event) {
+
     const file = event.target.files[0];
-    const name = file.name;
-    const index = name.lastIndexOf('.');
-    originalImage.name = name.slice(0, index);
-    originalImage.size = file.size;
+
     displayImage(file);
 }
 
+// File drag 'n drop
+function handleFileDrag(event) {
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const className = event.target.className;
+
+    if (className.indexOf("image-upload__dropzone") === -1) {
+
+        event.dataTransfer.effectAllowed = "none";
+        event.dataTransfer.dropEffect = "none";
+    }
+    else {
+
+        dropZone.classList.add("image-upload__drag-over-dropzone");
+    }
+
+}
+
+function handleFileDrop(event) {
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const className = event.target.className;
+
+    if (className.indexOf("image-upload__dropzone") === -1) {
+
+        event.dataTransfer.effectAllowed = "none";
+        event.dataTransfer.dropEffect = "none";
+    }
+    else {
+
+        removeDragStyling();
+
+        const data = event.dataTransfer;
+        const file = data.files[0];
+
+        displayImage(file);
+    }
+}
+
+function removeDragStyling() {
+
+    dropZone.classList.remove("image-upload__drag-over-dropzone");
+}
+
+// Set canvas
 function displayImage(imageFile) {
+
+    const name = imageFile.name;
+    const index = name.lastIndexOf('.');
+    originalImage.name = name.slice(0, index);
+    originalImage.size = imageFile.size;
+
     const imagePath = URL.createObjectURL(imageFile);
     originalImage.element.src = imagePath;
 
@@ -83,18 +154,80 @@ function displayImage(imageFile) {
     });
 }
 
-function downloadImage() {
+// Move selection box
+function clickSelectionBox(clickEvent) {
 
-    if (isImageLoaded) {
-        const temporaryLink = document.createElement('a');
+    if (!isSelectionResizing) {
 
-        temporaryLink.download = `${originalImage.name}-${selectionBoxDimensions.width}-${selectionBoxDimensions.height}.jpg`;
-        temporaryLink.href = canvas.toDataURL("image/jpeg", 1);
+        const pointerX = clickEvent.offsetX;
+        const pointerY = clickEvent.offsetY;
 
-        temporaryLink.click();
+        function moveSelectionBox(moveEvent) {
+
+            const rectangle = canvas.getBoundingClientRect();
+            const left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
+            const top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
+
+            selectionBox.style.left = `${left}px`;
+            selectionBox.style.top = `${top}px`;
+
+            selectionBoxDimensions = {
+                x: Math.floor(left * originalImage.scale),
+                y: Math.floor(top * originalImage.scale),
+                width: Math.floor((moveEvent.target.clientWidth + 2 * moveEvent.target.clientLeft) * originalImage.scale),
+                height: Math.floor((moveEvent.target.clientHeight + 2 * moveEvent.target.clientTop) * originalImage.scale)
+            }
+        }
+
+        function stopSelection(stopEvent) {
+
+            document.onmousemove = null;
+            document.onmouseup = null;
+            selectionBox.removeEventListener('mouseup', stopSelection);
+        }
+
+        document.onmousemove = (event) => moveSelectionBox(event);
+        document.onmouseup = (event) => stopSelection(event);
     }
 }
 
+// Resize selection box
+function clickResizeHandleSelectionBox(clickEvent) {
+
+    isSelectionResizing = true;
+    document.onmousemove = null;
+
+    const pointerX = clickEvent.clientX;
+    const pointerY = clickEvent.clientY;
+
+    const rectangle = selectionBox.getBoundingClientRect();
+
+    function resizeSelectionBox(resizeEvent) {
+
+        const newWidth = Math.floor(rectangle.width + resizeEvent.clientX - pointerX);
+        const newHeight = Math.floor(rectangle.height + resizeEvent.clientY - pointerY);
+
+        const newSize = newWidth < newHeight ? newWidth : newHeight;
+
+        selectionBox.style.width = `${newSize}px`;
+        selectionBox.style.height = `${newSize}px`
+
+        selectionBoxDimensions.width = Math.floor(newSize * originalImage.scale);
+        selectionBoxDimensions.height = Math.floor(newSize * originalImage.scale);
+    }
+
+    function stopResizingSelectionBox(stopEvent) {
+
+        document.onmousemove = null;
+        document.onmouseup = null;
+        isSelectionResizing = false;
+    }
+
+    document.onmousemove = (event) => resizeSelectionBox(event);
+    document.onmouseup = (event) => stopResizingSelectionBox(event);
+}
+
+// Image edit and save actions
 function resizeImage(x, y, width, heigth) {
 
     if (isImageLoaded) {
@@ -132,77 +265,14 @@ function resetImage() {
     resizeHandleSelectionBox.style.display = "block";
 }
 
+function downloadImage() {
 
+    if (isImageLoaded) {
+        const temporaryLink = document.createElement('a');
 
-function clickSelectionBox(clickEvent) {
+        temporaryLink.download = `${originalImage.name}-${selectionBoxDimensions.width}-${selectionBoxDimensions.height}.jpg`;
+        temporaryLink.href = canvas.toDataURL("image/jpeg", 1);
 
-    if (!isSelectionResizing) {
-
-        const pointerX = clickEvent.offsetX;
-        const pointerY = clickEvent.offsetY;
-
-
-
-        function moveSelectionBox(moveEvent) {
-
-            const rectangle = canvas.getBoundingClientRect();
-            const left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
-            const top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
-
-            selectionBox.style.left = `${left}px`;
-            selectionBox.style.top = `${top}px`;
-
-            selectionBoxDimensions = {
-                x: Math.floor(left * originalImage.scale),
-                y: Math.floor(top * originalImage.scale),
-                width: Math.floor((moveEvent.target.clientWidth + 2 * moveEvent.target.clientLeft) * originalImage.scale),
-                height: Math.floor((moveEvent.target.clientHeight + 2 * moveEvent.target.clientTop) * originalImage.scale)
-            }
-        }
-
-        function stopSelection(stopEvent) {
-
-            document.onmousemove = null;
-            document.onmouseup = null;
-            selectionBox.removeEventListener('mouseup', stopSelection);
-        }
-
-        document.onmousemove = (event) => moveSelectionBox(event);
-        document.onmouseup = (event) => stopSelection(event);
+        temporaryLink.click();
     }
-}
-
-function clickResizeHandleSelectionBox(clickEvent) {
-
-    isSelectionResizing = true;
-    document.onmousemove = null;
-
-    const pointerX = clickEvent.clientX;
-    const pointerY = clickEvent.clientY;
-
-    const rectangle = selectionBox.getBoundingClientRect();
-
-    function resizeSelectionBox(resizeEvent) {
-
-        const newWidth = Math.floor(rectangle.width + resizeEvent.clientX - pointerX);
-        const newHeight = Math.floor(rectangle.height + resizeEvent.clientY - pointerY);
-
-        const newSize = newWidth < newHeight ? newWidth : newHeight;
-
-        selectionBox.style.width = `${newSize}px`;
-        selectionBox.style.height = `${newSize}px`
-
-        selectionBoxDimensions.width = Math.floor(newSize * originalImage.scale);
-        selectionBoxDimensions.height = Math.floor(newSize * originalImage.scale);
-    }
-
-    function stopResizingSelectionBox(stopEvent) {
-
-        document.onmousemove = null;
-        document.onmouseup = null;
-        isSelectionResizing = false;
-    }
-
-    document.onmousemove = (event) => resizeSelectionBox(event);
-    document.onmouseup = (event) => stopResizingSelectionBox(event);
 }
