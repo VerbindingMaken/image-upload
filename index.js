@@ -54,12 +54,7 @@ let originalImage = {
     element: new Image()
 }
 
-let selectionBoxDimensions = {
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0
-}
+let selectionBoxDimensions;
 
 // File input
 function selectImageForUpload() {
@@ -125,6 +120,68 @@ function removeDragStyling() {
     dropZone.classList.remove("image-upload__drag-over-dropzone");
 }
 
+function setCanvas(originalImage) {
+    // Reset canvas-frame size
+    canvasFrame.style.width = '';
+    canvasFrame.style.height = '';
+
+    // Set canvas width
+    const width = originalImage.element.naturalWidth;
+    const height = originalImage.element.naturalHeight;
+
+    canvas.width = originalImage.width = width;
+    canvas.height = originalImage.height = height;
+
+    // Set dimensions for display
+    if (canvas.width >= canvas.height && canvas.width > 300) {
+        canvasFrame.style.width = '300px';
+        const ratio = width / height
+        const heightFromRatio = Math.floor(300 / ratio);
+        canvasFrame.style.height = `${heightFromRatio}px`;
+
+        originalImage.scale = width / 300;
+    }
+    else if (canvas.height >= canvas.width && canvas.height > 300) {
+        const ratio = height / width;
+        const widthFromRatio = Math.floor(300 / ratio);
+        canvasFrame.style.width = `${widthFromRatio}px`
+        canvasFrame.style.height = '300px';
+
+        originalImage.scale = height / 300;
+    }
+    else {
+        canvasFrame.style.width = `${canvas.width}px`;
+        canvasFrame.style.height = `${canvas.height}px`;
+
+        originalImage.scale = 1;
+    }
+
+    canvas.style.maxWidth = '300px';
+    canvas.style.maxHeight = '300px';
+
+    // Draw canvas
+    canvasContext.drawImage(originalImage.element, 0, 0, originalImage.width, originalImage.height);
+}
+
+function setSelectionBox() {
+
+    selectionBoxDimensions = {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100
+    }
+
+    // Set SelectionBox dimensions for display;
+    selectionBox.style.top = selectionBoxDimensions.y;
+    selectionBox.style.left = selectionBoxDimensions.x;
+    selectionBox.style.width = `${selectionBoxDimensions.width}px`;
+    selectionBox.style.height = `${selectionBoxDimensions.height}px`;
+
+    selectionBox.style.display = "block";
+    resizeHandleSelectionBox.style.display = "block";
+}
+
 // Set canvas
 function displayImage(imageFile) {
 
@@ -136,56 +193,16 @@ function displayImage(imageFile) {
     const imagePath = URL.createObjectURL(imageFile);
     originalImage.element.src = imagePath;
 
-    function setCanvas() {
-        // Reset canvas-frame size
-        canvasFrame.style.width = '';
-        canvasFrame.style.height = '';
-
-        const width = originalImage.element.naturalWidth;
-        const height = originalImage.element.naturalHeight;
-
-        canvas.width = originalImage.width = width;
-        canvas.height = originalImage.height = height;
-
-        // Set dimensions for display
-        if (canvas.width >= canvas.height && canvas.width > 300) {
-            canvasFrame.style.width = '300px';
-            const ratio = width / height
-            const heightFromRatio = Math.floor(300 / ratio);
-            canvasFrame.style.height = `${heightFromRatio}px`;
-
-            originalImage.scale = width / 300;
-        }
-        else if (canvas.height >= canvas.width && canvas.height > 300) {
-            const ratio = height / width;
-            const widthFromRatio = Math.floor(300 / ratio);
-            canvasFrame.style.width = `${widthFromRatio}px`
-            canvasFrame.style.height = '300px';
-
-            originalImage.scale = height / 300;
-        }
-        else {
-            canvasFrame.style.width = `${canvas.width}px`;
-            canvasFrame.style.height = `${canvas.height}px`;
-
-            originalImage.scale = 1;
-        }
-
-        canvas.style.maxWidth = '300px';
-        canvas.style.maxHeight = '300px';
-
-        // Draw canvas
-        canvasContext.drawImage(originalImage.element, 0, 0, originalImage.width, originalImage.height);
-
-        selectionBox.style.display = "block";
-        resizeHandleSelectionBox.style.display = "block";
+    function setCanvasAndSelectionBox() {
+        setCanvas(originalImage);
+        setSelectionBox();
 
         isImageLoaded = true;
 
-        originalImage.element.removeEventListener('load', setCanvas);
+        originalImage.element.removeEventListener('load', setCanvasAndSelectionBox);
     }
 
-    originalImage.element.addEventListener('load', setCanvas);
+    originalImage.element.addEventListener('load', setCanvasAndSelectionBox);
 }
 
 // Move selection box
@@ -205,12 +222,8 @@ function clickSelectionBox(clickEvent) {
             selectionBox.style.left = `${left}px`;
             selectionBox.style.top = `${top}px`;
 
-            selectionBoxDimensions = {
-                x: Math.floor(left * originalImage.scale),
-                y: Math.floor(top * originalImage.scale),
-                width: Math.floor((moveEvent.target.clientWidth + 2 * moveEvent.target.clientLeft) * originalImage.scale),
-                height: Math.floor((moveEvent.target.clientHeight + 2 * moveEvent.target.clientTop) * originalImage.scale)
-            }
+            selectionBoxDimensions.x = left;
+            selectionBoxDimensions.y = top;
         }
 
         function stopSelection(stopEvent) {
@@ -249,8 +262,8 @@ function clickResizeHandleSelectionBox(clickEvent) {
         selectionBox.style.width = `${newSize}px`;
         selectionBox.style.height = `${newSize}px`
 
-        selectionBoxDimensions.width = Math.floor(newSize * originalImage.scale);
-        selectionBoxDimensions.height = Math.floor(newSize * originalImage.scale);
+        selectionBoxDimensions.width = newSize;
+        selectionBoxDimensions.height = newSize;
     }
 
     function stopResizingSelectionBox(stopEvent) {
@@ -274,10 +287,26 @@ function resizeImage(x, y, width, heigth) {
         canvas.height = heigth;
 
         if (x === 0 && y === 0) {
-            canvasContext.drawImage(originalImage.element, x, y, width, heigth);
+            canvasContext.drawImage(
+                originalImage.element,
+                x,
+                y,
+                width,
+                heigth
+            );
         }
         else {
-            canvasContext.drawImage(originalImage.element, x, y, width, heigth, 0, 0, width, heigth);
+            canvasContext.drawImage(
+                originalImage.element,
+                x,
+                y,
+                width,
+                heigth,
+                0,
+                0,
+                width,
+                heigth
+            );
         }
 
         // Set dimeninsion for display
@@ -297,11 +326,16 @@ function resizeImage(x, y, width, heigth) {
 
 function cropImage() {
 
+    const scaledX = selectionBoxDimensions.x * originalImage.scale;
+    const scaledY = selectionBoxDimensions.y * originalImage.scale;
+    const scaledWith = selectionBoxDimensions.width * originalImage.scale;
+    const scaledHeight = selectionBoxDimensions.height * originalImage.scale;
+
     resizeImage(
-        selectionBoxDimensions.x,
-        selectionBoxDimensions.y,
-        selectionBoxDimensions.width,
-        selectionBoxDimensions.height
+        scaledX,
+        scaledY,
+        scaledWith,
+        scaledHeight
     )
 
     selectionBox.style.display = "none";
@@ -310,10 +344,8 @@ function cropImage() {
 
 function resetImage() {
 
-    resizeImage(0, 0, originalImage.width, originalImage.height);
-
-    selectionBox.style.display = "block";
-    resizeHandleSelectionBox.style.display = "block";
+    setCanvas(originalImage);
+    setSelectionBox();
 }
 
 function downloadImage() {
@@ -321,7 +353,10 @@ function downloadImage() {
     if (isImageLoaded) {
         const temporaryLink = document.createElement('a');
 
-        temporaryLink.download = `${originalImage.name}-${selectionBoxDimensions.width}-${selectionBoxDimensions.height}.jpg`;
+        const pixelWidth = selectionBoxDimensions.width * originalImage.scale;
+        const pixelHeight = selectionBoxDimensions.height * originalImage.scale;
+
+        temporaryLink.download = `${originalImage.name}-${pixelWidth}-${pixelHeight}.jpg`;
         temporaryLink.href = canvas.toDataURL("image/jpeg", 1);
 
         temporaryLink.click();
