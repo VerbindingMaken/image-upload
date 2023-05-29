@@ -45,7 +45,7 @@ const canvasContext = canvas.getContext("2d");
 let isImageLoaded = false;
 let isSelectionResizing = false
 
-const originalImage = {
+let originalImage = {
     name: "",
     size: 0,
     width: 0,
@@ -136,25 +136,56 @@ function displayImage(imageFile) {
     const imagePath = URL.createObjectURL(imageFile);
     originalImage.element.src = imagePath;
 
-    originalImage.element.addEventListener('load', function () {
-        originalImage.width = originalImage.element.naturalWidth;
-        originalImage.height = originalImage.element.naturalHeight; ``
+    function setCanvas() {
+        // Reset canvas-frame size
+        canvasFrame.style.width = '';
+        canvasFrame.style.height = '';
 
-        canvas.width = originalImage.width;
-        canvas.height = originalImage.height;
+        const width = originalImage.element.naturalWidth;
+        const height = originalImage.element.naturalHeight;
+
+        canvas.width = originalImage.width = width;
+        canvas.height = originalImage.height = height;
+
+        // Set dimensions for display
+        if (canvas.width >= canvas.height && canvas.width > 300) {
+            canvasFrame.style.width = '300px';
+            const ratio = width / height
+            const heightFromRatio = Math.floor(300 / ratio);
+            canvasFrame.style.height = `${heightFromRatio}px`;
+
+            originalImage.scale = width / 300;
+        }
+        else if (canvas.height >= canvas.width && canvas.height > 300) {
+            const ratio = height / width;
+            const widthFromRatio = Math.floor(300 / ratio);
+            canvasFrame.style.width = `${widthFromRatio}px`
+            canvasFrame.style.height = '300px';
+
+            originalImage.scale = height / 300;
+        }
+        else {
+            canvasFrame.style.width = `${canvas.width}px`;
+            canvasFrame.style.height = `${canvas.height}px`;
+
+            originalImage.scale = 1;
+        }
 
         canvas.style.maxWidth = '300px';
         canvas.style.maxHeight = '300px';
 
+        // Draw canvas
         canvasContext.drawImage(originalImage.element, 0, 0, originalImage.width, originalImage.height);
-
-        originalImage.scale = originalImage.width / canvas.offsetWidth;
 
         selectionBox.style.display = "block";
         resizeHandleSelectionBox.style.display = "block";
 
         isImageLoaded = true;
-    });
+
+        originalImage.element.removeEventListener('load', setCanvas);
+    }
+
+    originalImage.element.addEventListener('load', setCanvas);
 }
 
 // Move selection box
@@ -238,6 +269,7 @@ function resizeImage(x, y, width, heigth) {
 
     if (isImageLoaded) {
 
+        // Draw canvas
         canvas.width = width;
         canvas.height = heigth;
 
@@ -247,6 +279,19 @@ function resizeImage(x, y, width, heigth) {
         else {
             canvasContext.drawImage(originalImage.element, x, y, width, heigth, 0, 0, width, heigth);
         }
+
+        // Set dimeninsion for display
+        if (canvas.width > 300) {
+            canvasFrame.style.width = '300px';
+            canvasFrame.style.height = '300px';
+        }
+        else {
+            canvasFrame.style.width = `${canvas.width}px`;
+            canvasFrame.style.height = `${canvas.height}px`;
+        }
+
+        canvas.style.maxWidth = '300px';
+        canvas.style.maxHeight = '300px';
     }
 }
 
