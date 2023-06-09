@@ -51,7 +51,7 @@ let originalImage = {
     width: 0,
     height: 0,
     scale: 0,
-    element: new Image()
+    element: null
 }
 
 let selectionBoxDimensions;
@@ -184,6 +184,8 @@ function setSelectionBox() {
 
 // Set canvas
 function displayImage(imageFile) {
+
+    originalImage.element = new Image();
 
     const name = imageFile.name;
     const index = name.lastIndexOf('.');
