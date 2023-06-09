@@ -51,10 +51,17 @@ let originalImage = {
     width: 0,
     height: 0,
     scale: 0,
+    displayWidth: 0,
+    displayHeight: 0,
     element: null
 }
 
 let selectionBoxDimensions;
+
+function stopDefault(event) {
+    event.preventDefault();
+    event.stopPropagation();
+}
 
 // File input
 function selectImageForUpload() {
@@ -72,8 +79,7 @@ function handleFileInput(event) {
 // File drag 'n drop
 function handleFileDrag(event) {
 
-    event.preventDefault();
-    event.stopPropagation();
+    stopDefault(event);
 
     const className = event.target.className;
 
@@ -91,8 +97,7 @@ function handleFileDrag(event) {
 
 function handleFileDrop(event) {
 
-    event.preventDefault();
-    event.stopPropagation();
+    stopDefault(event);
 
     const className = event.target.className;
 
@@ -134,27 +139,30 @@ function setCanvas(originalImage) {
 
     // Set dimensions for display
     if (canvas.width >= canvas.height && canvas.width > 300) {
-        canvasFrame.style.width = '300px';
+        originalImage.displayWidth = 300;
         const ratio = width / height
         const heightFromRatio = Math.floor(300 / ratio);
-        canvasFrame.style.height = `${heightFromRatio}px`;
+        originalImage.displayHeight = heightFromRatio;
 
         originalImage.scale = width / 300;
     }
     else if (canvas.height >= canvas.width && canvas.height > 300) {
         const ratio = height / width;
         const widthFromRatio = Math.floor(300 / ratio);
-        canvasFrame.style.width = `${widthFromRatio}px`
-        canvasFrame.style.height = '300px';
+        originalImage.displayWidth = widthFromRatio
+        originalImage.displayHeight = 300;
 
         originalImage.scale = height / 300;
     }
     else {
-        canvasFrame.style.width = `${canvas.width}px`;
-        canvasFrame.style.height = `${canvas.height}px`;
+        originalImage.displayWidth = canvas.width;
+        originalImage.displayHeight = canvas.height;
 
         originalImage.scale = 1;
     }
+
+    canvasFrame.style.width = `${originalImage.displayWidth}px`;
+    canvasFrame.style.height = `${originalImage.displayHeight}px`;
 
     canvas.style.maxWidth = '300px';
     canvas.style.maxHeight = '300px';
@@ -210,6 +218,11 @@ function displayImage(imageFile) {
 // Move selection box
 function clickSelectionBox(clickEvent) {
 
+    stopDefault(clickEvent);
+
+    const rectangle = canvas.getBoundingClientRect();
+
+
     if (!isSelectionResizing) {
 
         const pointerX = clickEvent.offsetX;
@@ -217,18 +230,37 @@ function clickSelectionBox(clickEvent) {
 
         function moveSelectionBox(moveEvent) {
 
-            const rectangle = canvas.getBoundingClientRect();
-            const left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
-            const top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
+            stopDefault(moveEvent);
 
+            // Calculate left and top postion of selectionBox, relative to canvas, based on mouse movement
+            let left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
+            let top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
+
+            // Keep selectionbox inside image
+            if (left <= 0) {
+                left = 0;
+            }
+            if ((left + selectionBoxDimensions.width) >= originalImage.displayWidth) {
+                left = (originalImage.displayWidth - selectionBoxDimensions.width);
+            }
+            if (top <= 0) {
+                top = 0;
+            }
+            if ((top + selectionBoxDimensions.height) >= originalImage.displayHeight) {
+                top = (originalImage.displayHeight - selectionBoxDimensions.height)
+            }
+
+
+            // Set selectionbox position
             selectionBox.style.left = `${left}px`;
             selectionBox.style.top = `${top}px`;
 
             selectionBoxDimensions.x = left;
             selectionBoxDimensions.y = top;
+
         }
 
-        function stopSelection(stopEvent) {
+        function stopSelection() {
 
             document.onmousemove = null;
             document.onmouseup = null;
@@ -236,12 +268,14 @@ function clickSelectionBox(clickEvent) {
         }
 
         document.onmousemove = (event) => moveSelectionBox(event);
-        document.onmouseup = (event) => stopSelection(event);
+        document.onmouseup = () => stopSelection();
     }
 }
 
 // Resize selection box
 function clickResizeHandleSelectionBox(clickEvent) {
+
+    stopDefault(clickEvent);
 
     isSelectionResizing = true;
     document.onmousemove = null;
@@ -252,6 +286,8 @@ function clickResizeHandleSelectionBox(clickEvent) {
     const rectangle = selectionBox.getBoundingClientRect();
 
     function resizeSelectionBox(resizeEvent) {
+
+        stopDefault(resizeEvent);
 
         resizeEvent.stopPropagation();
         resizeEvent.preventDefault();
@@ -268,7 +304,7 @@ function clickResizeHandleSelectionBox(clickEvent) {
         selectionBoxDimensions.height = newSize;
     }
 
-    function stopResizingSelectionBox(stopEvent) {
+    function stopResizingSelectionBox() {
 
         document.onmousemove = null;
         document.onmouseup = null;
@@ -276,7 +312,7 @@ function clickResizeHandleSelectionBox(clickEvent) {
     }
 
     document.onmousemove = (event) => resizeSelectionBox(event);
-    document.onmouseup = (event) => stopResizingSelectionBox(event);
+    document.onmouseup = () => stopResizingSelectionBox();
 }
 
 // Image edit and save actions
