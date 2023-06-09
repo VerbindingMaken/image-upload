@@ -225,18 +225,18 @@ function clickSelectionBox(clickEvent) {
 
     if (!isSelectionResizing) {
 
-        const pointerX = clickEvent.offsetX;
-        const pointerY = clickEvent.offsetY;
+        const offsetX = clickEvent.offsetX;
+        const offsetY = clickEvent.offsetY;
 
         function moveSelectionBox(moveEvent) {
 
             stopDefault(moveEvent);
 
-            // Calculate left and top postion of selectionBox, relative to canvas, based on mouse movement
-            let left = Math.floor((moveEvent.clientX - pointerX) - rectangle.left);
-            let top = Math.floor((moveEvent.clientY - pointerY) - rectangle.top);
+            // Calculate left and top postion of selectionBox, relative to canvas,` based on mouse movement
+            let left = Math.floor((moveEvent.clientX - offsetX) - rectangle.left);
+            let top = Math.floor((moveEvent.clientY - offsetY) - rectangle.top);
 
-            // Keep selectionbox inside image
+            // Keep selectionbox inside canvas boundaries
             if (left <= 0) {
                 left = 0;
             }
@@ -280,8 +280,8 @@ function clickResizeHandleSelectionBox(clickEvent) {
     isSelectionResizing = true;
     document.onmousemove = null;
 
-    const pointerX = clickEvent.clientX;
-    const pointerY = clickEvent.clientY;
+    const clientX = clickEvent.clientX;
+    const clientY = clickEvent.clientY;
 
     const rectangle = selectionBox.getBoundingClientRect();
 
@@ -289,14 +289,21 @@ function clickResizeHandleSelectionBox(clickEvent) {
 
         stopDefault(resizeEvent);
 
-        resizeEvent.stopPropagation();
-        resizeEvent.preventDefault();
+        // Calculate width and height of selctionbox based on mousemovement
+        let newWidth = Math.floor(rectangle.width + resizeEvent.clientX - clientX);
+        let newHeight = Math.floor(rectangle.height + resizeEvent.clientY - clientY);
 
-        const newWidth = Math.floor(rectangle.width + resizeEvent.clientX - pointerX);
-        const newHeight = Math.floor(rectangle.height + resizeEvent.clientY - pointerY);
+        // Keep selectionBox dimensions inside canvas boundaries
+        if ((selectionBoxDimensions.x + newWidth) >= originalImage.displayWidth) {
+            newWidth = (originalImage.displayWidth - selectionBoxDimensions.x);
+        }
+        if ((selectionBoxDimensions.y + newHeight) >= originalImage.displayHeight) {
+            newHeight = (originalImage.displayHeight - selectionBoxDimensions.y);
+        }
 
         const newSize = newWidth < newHeight ? newWidth : newHeight;
 
+        // Set new selectionbox width and height
         selectionBox.style.width = `${newSize}px`;
         selectionBox.style.height = `${newSize}px`
 
