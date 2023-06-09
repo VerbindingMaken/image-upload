@@ -286,28 +286,17 @@ function resizeImage(x, y, width, heigth) {
         canvas.width = width;
         canvas.height = heigth;
 
-        if (x === 0 && y === 0) {
-            canvasContext.drawImage(
-                originalImage.element,
-                x,
-                y,
-                width,
-                heigth
-            );
-        }
-        else {
-            canvasContext.drawImage(
-                originalImage.element,
-                x,
-                y,
-                width,
-                heigth,
-                0,
-                0,
-                width,
-                heigth
-            );
-        }
+        canvasContext.drawImage(
+            originalImage.element,
+            x,
+            y,
+            width,
+            heigth,
+            0,
+            0,
+            width,
+            heigth
+        );
 
         // Set dimeninsion for display
         if (canvas.width > 300) {
