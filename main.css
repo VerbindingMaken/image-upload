@@ -2,6 +2,7 @@
     box-sizing: border-box;
 }
 
+
 .image-upload__container {
     display: flex;
     justify-content: center;
@@ -64,20 +65,22 @@
 }
 
 .image-edit__selection-box {
+    --color: #f6f6f6;
+    --hover-color: white;
     position: absolute;
     display: none;
     top: 0;
     left: 0;
-    border: 4px dashed black;
+    border: 4px dashed var(--color);
 }
 
 .image-edit__selection-box:hover {
-    border-color: red;
+    border-color: var(--hover-color);
     cursor: grab;
 }
 
 .image-edit__selection-box:hover .image-edit__resize-handle-selection-box {
-    background-color: red;
+    background-color: var(--hover-color);
 }
 
 
@@ -90,7 +93,7 @@
     border-radius: 50%;
     transform: translate(10px, 10px);
     display: none;
-    background-color: black;
+    background-color: var(--hover-color);
 }
 
 .image-edit__resize-handle-selection-box:hover {
